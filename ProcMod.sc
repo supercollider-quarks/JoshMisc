@@ -1,4 +1,4 @@
-
+//model-view-controller messages: \isRunning (true for play, false when released/freed), \amp; see SimpleController.help for m-v-c example
 ProcMod {
 	var <amp, <>group, <addAction, <target, <timeScale, <lag, <>id, <>function,
 		<>releaseFunc, <>onReleaseFunc, <responder, <envnode, <isRunning = false, <data,
@@ -45,6 +45,7 @@ ProcMod {
 		oldgroups = [];
 		oldclocks = [];
 		midiAmp = false;
+		this.changed(\amp, amp);
 		}
 
 	*play {arg env, amp = 1, id, group, addAction = 0, target = 1, function,
@@ -57,6 +58,7 @@ ProcMod {
 		clock = clock ?? {uniqueClock = true; TempoClock.new(tempo, queueSize: 1024)};
 		isRunning.not.if({
 			isRunning = true;
+			this.changed(\isRunning, isRunning);
 			// add the responder if it isn't nil
 			responder.notNil.if({responder.add});
 			midiAmp.if({
@@ -129,7 +131,8 @@ ProcMod {
 			port = MIDIOut.new(midiPort);
 			port.control(midiChan, midiCtrl,
 				(midiAmpSpec.unmap(amp) * 127).round.max(0).min(127));
-			})
+			});
+		this.changed(\amp, amp);
 	}
 
 	lag_ {arg newlag;
@@ -223,6 +226,7 @@ ProcMod {
 			oldclocks = oldclocks.add(curclock);
 			group = nil;
 			isRunning = false;
+			this.changed(\isRunning, isRunning);
 			isReleasing = true;
 			});
 		}
@@ -243,7 +247,7 @@ ProcMod {
 		(gui and: {closeable}).if({window.close});
 		this.clear(curproc, curresp, curgroup, currelfunc, oldclock, oldccctrl: curccctrl);
 		isRunning = false;
-
+		this.changed(\isRunning, isRunning);
 	}
 
 	// stops the function that is running
@@ -266,7 +270,7 @@ ProcMod {
 			});
 		oldresp.notNil.if({oldresp.remove});
 		oldccctrl.notNil.if({oldccctrl.remove});
-		retrig.not.if({isRunning = false});
+		retrig.not.if({isRunning = false; this.changed(\isRunning, isRunning);});
 		retrig.if({isReleasing = false});
 		oldclock.notNil.if({ oldclock.stop });
 		}
@@ -537,6 +541,7 @@ ProcModR : ProcMod {
 			});
 				}, '/pmodAmpTrack');
 			isRunning = true;
+			this.changed(\isRunning, isRunning);
 			responder.notNil.if({responder.add});
 			midiAmp.if({
 				[midiChan, midiCtrl].postln;
@@ -663,6 +668,7 @@ ProcModR : ProcMod {
 			oldclocks = oldclocks.add(curclock);
 			group = nil;
 			isRunning = false;
+			this.changed(\isRunning, isRunning);
 			isReleasing = true;
 			});
 		}
@@ -686,6 +692,7 @@ ProcModR : ProcMod {
 		this.clear(curproc, curresp, curgroup, currelfunc, oldclock,
 			curhdr, curroute, curccctrl, curAmpDef);
 		isRunning = false;
+		this.changed(\isRunning, isRunning);
 	}
 
 	clear {arg oldproc, oldresp, oldgroup, oldrelfunc, oldclock, oldhdr, oldroute, oldccctrl, oldAmpDef;
@@ -760,6 +767,8 @@ ProcModR : ProcMod {
 //		- should include a bank of sliders for each Proc Mod (and identify the event number)
 //  		- should be able to save values of amps to a file
 //		- MAYBE? allow you to set certain parameters of a ProcMod (like envelope release time, etc)
+
+//model-view-controller messages: \indexPlaying with the current index, \amp with global amp
 
 ProcEvents {
 	var <eventDict, <ampDict, <eventArray, <releaseArray, <timeArray, <index,
@@ -836,6 +845,7 @@ ProcEvents {
 		server = argserver;
 		amp = argamp;
 		index = 0;
+		this.changed(\indexPlaying, nil);
 		lag = arglag;
 		firstevent = true;
 		isPlaying = false;
@@ -902,6 +912,7 @@ ProcEvents {
 
 	play {arg event;
 		var path;
+		this.changed(\indexPlaying, event);
 		firstevent.if({
 			isPlaying = true;
 			starttime.isNil.if({starttime = Main.elapsedTime});
@@ -966,6 +977,7 @@ ProcEvents {
 			});
 		tlplay.if({this.stopTimeLine});
 		tlrec.if({this.stopRecordTimeLine});
+		this.changed(\indexPlaying, nil)
 	}
 
 	reset {
@@ -975,6 +987,7 @@ ProcEvents {
 		initmod.isKindOf(ProcMod).if({initmod.kill});
 		firstevent = true;
 		index = 0;
+		this.changed(\indexPlaying, nil);
 		lag = 0.1;
 		this.amp_(1);
 		gui.if({
@@ -994,6 +1007,7 @@ ProcEvents {
 	amp_ {arg newamp, newlag = 0.1;
 		var slide, db;
 		amp = newamp;
+		this.changed(\amp, amp);
 		(newlag != lag).if({
 			this.lag_(newlag);
 			});

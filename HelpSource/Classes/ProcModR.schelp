@@ -6,6 +6,8 @@ related:: Classes/ProcMod, Classes/ProcEvents
 DESCRIPTION::
 A structure for controlling modular processes, with the capabilitiy to record its output in real-time.
 
+ProcModR will update the state of another object in a model-view-controller paradigm (see link::Classes/SimpleController::). Currently implemented messages are code::\isRunning:: and code::\amp::. See link::Classes/ProcEvents#Model-view-controller examples::.
+
 
 CLASSMETHODS::
 
