@@ -7,7 +7,7 @@ DESCRIPTION::
 A structure for controlling modular processes.
 
 
-ProcEvents will update the state of another object in a model-view-controller paradigm (see link::Classes/SimpleController::). Currently implemented messages are code::\indexPlaying:: and code::\amp::. See link::Classes/ProcEvents#Model-view-controller examples::.
+ProcEvents will update the state of another object in a model-view-controller paradigm (see link::Classes/SimpleController::). Currently implemented messages are code::\indexPlaying:: and code::\amp::. See link::#Model-view-controller examples::.
 
 CLASSMETHODS::
 
@@ -420,8 +420,8 @@ SynthDef(\singrain, {arg freq, amp, dur, procbus, outbus = 0;
 
 (
 // create a ProcMod... feed the function in at init time
-// for using a gui, it's important to define proc's id
-a = ProcMod.new(Env([0, 1, 0], [1, 1], \sin, 1), 0.02, \proc_a)
+// when planning to create a gui, it's important to define procs' IDs
+a = ProcMod.new(Env([0, 1, 0], [1, 1], \sin, 1), -30.dbamp, \proc_a)
         .function_({arg group, envbus, server;
 	            Task({
 		                inf.do({
@@ -435,7 +435,7 @@ a = ProcMod.new(Env([0, 1, 0], [1, 1], \sin, 1), 0.02, \proc_a)
         );
 
 // create a ProcMod... set the function after init time
-b = ProcMod.new(Env([0, 1, 0], [1, 1], \sin, 1), 0.02, \proc_b)
+b = ProcMod.new(Env([0, 1, 0], [1, 1], \sin, 1), -30.dbamp, \proc_b)
     .function_({arg group, envbus;
 	        Task({
 		            inf.do({
@@ -483,6 +483,7 @@ f = {|events| //pass ProcEvents as an argument
 	evController.put(\amp, {|theChanger, what, values| //only posting
 		"events' global amp: ".post; values.ampdb.round(0.1).post; " dB".postln;
 	});
+	win.onClose_({evController.remove}); //important to remove on close
 
 	//scrollable view with all procmods
 	scroll = ScrollView(win, win.bounds.width@win.bounds.height);
@@ -496,7 +497,11 @@ f = {|events| //pass ProcEvents as an argument
 		var runButt, sl, thisView;
 		var controller = SimpleController(thisProc); //SimpleController for each individual procmod
 		thisView = View(view).layout_(HLayout(
-			runButt = Button(view).states_([[key ++ " [ ]", Color.black], [key ++ " >", Color.black, Color.green(0.75, 0.25)]]).action_({|butt| if(butt.value.asBoolean, {thisProc.play}, {thisProc.release})}).fixedWidth_(220),
+			runButt = Button(view)
+			.states_([[key ++ " [ ]", Color.black], [key ++ " >", Color.black, Color.green(0.75, 0.25)]])
+			.action_({|butt| if(butt.value.asBoolean, {thisProc.play}, {thisProc.release})})
+			.fixedWidth_(220)
+			.value_(thisProc.isRunning.asInteger),
 		).margins_([0,0,0,0]));
 		sl = EZSlider(win, controlSpec: ControlSpec(-90, 6, \db, default: thisProc.amp.ampdb), action: {|sl| thisProc.amp_(sl.value.dbamp)});
 		thisView.layout.add(sl.sliderView);
