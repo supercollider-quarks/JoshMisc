@@ -486,10 +486,10 @@ f = {|events| //pass ProcEvents as an argument
 	win.onClose_({evController.remove}); //important to remove on close
 
 	//scrollable view with all procmods
-	scroll = ScrollView(win, win.bounds.width@win.bounds.height);
+	scroll = ScrollView(win);
 	view = View();
 	scroll.canvas = view;
-	view.layout_(VLayout());
+	view.layout_(VLayout().spacing_(2));
 	// StaticText(win).string_();
 	evArr = events.eventArray;
 	evArr.flat.do({|key, inc|
@@ -503,7 +503,7 @@ f = {|events| //pass ProcEvents as an argument
 			.fixedWidth_(220)
 			.value_(thisProc.isRunning.asInteger),
 		).margins_([0,0,0,0]));
-		sl = EZSlider(win, controlSpec: ControlSpec(-90, 6, \db, default: thisProc.amp.ampdb), action: {|sl| thisProc.amp_(sl.value.dbamp)});
+		sl = EZSlider(view, controlSpec: ControlSpec(-90, 6, \db, default: thisProc.amp.ampdb), action: {|sl| thisProc.amp_(sl.value.dbamp)});
 		thisView.layout.add(sl.sliderView);
 		thisView.layout.add(sl.numberView.fixedWidth_(50));
 
