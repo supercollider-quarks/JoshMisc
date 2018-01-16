@@ -519,7 +519,6 @@ f = {|events| //pass ProcEvents as an argument
 		thisView.onClose_{controller.remove}; //important to remove on close
 	});
 	view.layout.add(nil); //space at the end
-	// View(view).minHeight_(100); //space at the end
 };
 )
 
