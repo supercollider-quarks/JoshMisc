@@ -1261,7 +1261,7 @@ ProcEvents {
 					this.play(numboxval);
 					window.view.children[numbox].value_(numboxval + 1);
 					window.view.children[window.view.children.indexOf(me)+1]
-						.string_("Current Event: "++numboxval);
+						.string_("Current Event: "++numboxval.asInteger);
 					}, {
 					"No event at that index".warn
 					})
