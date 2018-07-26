@@ -1,12 +1,12 @@
 TITLE:: ProcMod
 summary:: A real-time control structure
 categories:: Libraries>JoshUGens
-related:: Classes/ProcModR, Classes/ProcEvent
+related:: Classes/ProcModR, Classes/ProcEvents
 
 DESCRIPTION::
 A structure for controlling modular processes.
 
-
+ProcMod will update the state of another object in a model-view-controller paradigm (see link::Classes/SimpleController::). Currently implemented messages are code::\isRunning:: and code::\amp::. See link::Classes/ProcEvents#Model-view-controller examples::.
 CLASSMETHODS::
 
 METHOD:: initClass

@@ -7,6 +7,8 @@ DESCRIPTION::
 A structure for controlling modular processes.
 
 
+ProcEvents will update the state of another object in a model-view-controller paradigm (see link::Classes/SimpleController::). Currently implemented messages are code::\indexPlaying:: and code::\amp::. See link::#Model-view-controller examples::.
+
 CLASSMETHODS::
 
 METHOD:: buildFromFile
@@ -15,7 +17,7 @@ ARGUMENT:: procdict
 
 ARGUMENT:: tolerance
 
-ARGUMENT::  ... paths
+ARGUMENT:: ... paths
 
 
 METHOD:: initClass
@@ -397,4 +399,132 @@ s.waitForBoot({
 )
 
 s.scope
+::
+
+section:: Model-view-controller examples
+code::
+s.boot;
+
+(
+SynthDef(\singrain, {arg freq, amp, dur, procbus, outbus = 0;
+	    Out.ar(outbus,
+		        Pan2.ar(
+			            SinOsc.ar(freq, 0, amp) *
+			                EnvGen.kr(Env.sine(dur, amp), doneAction: 2) *
+			                In.kr(procbus), // read off the overall env control of the ProcMod
+			            Rand(-1.0, 1.0)
+		        )
+	    )
+}).add;
+)
+
+(
+// create a ProcMod... feed the function in at init time
+// when planning to create a gui, it's important to define procs' IDs
+a = ProcMod.new(Env([0, 1, 0], [1, 1], \sin, 1), -30.dbamp, \proc_a)
+        .function_({arg group, envbus, server;
+	            Task({
+		                inf.do({
+			                    s.sendMsg(\s_new, \singrain, s.nextNodeID, 0, group,
+				                        \freq, 440.rrand(880), \amp, 1, \dur, 0.2,
+				                        \procbus, envbus);
+			                    0.05.wait;
+		                    })
+	                });
+            }
+        );
+
+// create a ProcMod... set the function after init time
+b = ProcMod.new(Env([0, 1, 0], [1, 1], \sin, 1), -30.dbamp, \proc_b)
+    .function_({arg group, envbus;
+	        Task({
+		            inf.do({
+			                s.sendMsg(\s_new, \singrain, s.nextNodeID, 0, group,
+				                    \freq, 4400.rrand(8800), \amp, 1, \dur, 0.2,
+				                    \procbus, envbus);
+			                0.05.wait;
+		                })
+	            });
+        });
+
+// create the ProcEvents to run the above ProcMods
+e = ProcEvents.new(
+	    // an array of event / release arrays
+	    [
+		        // run 'a'
+		/* 0 */        [a, nil],
+		        // run 'b'
+		/* 1 */        [b, nil],
+		        // kill ev1 and ev2
+		/* 2 */        [nil, [a, b]]
+    ], 1);
+
+//create another gui for procmods and event number
+f = {|events| //pass ProcEvents as an argument
+	var win, view, scroll, evArr;
+	var procIndexView, evController;
+
+	win = Window.new("All ProcMods", Rect(0, 0, 500, Window.screenBounds.height)).front;
+
+	win.view.layout_(VLayout(
+		HLayout(
+			StaticText().string_("current event: ").font_(Font(size: 24)).fixedWidth_(220).align_(\right),
+			procIndexView = StaticText().font_(Font(size: 32)).fixedWidth_(100),
+			nil
+		)
+	).margins_([0,0,0,0]));
+
+	//SimpleController for ProcEvents
+	evController = SimpleController(events);
+	evController.put(\indexPlaying, {|theChanger, what, values| //values will be event's index when playing and nil when everything's released/stopped
+		// what.post; ": ".post; values.postln;
+		procIndexView.string_(values.asString); //this will be nil when no events are playing
+	});
+	evController.put(\amp, {|theChanger, what, values| //only posting
+		"events' global amp: ".post; values.ampdb.round(0.1).post; " dB".postln;
+	});
+	win.onClose_({evController.remove}); //important to remove on close
+
+	//scrollable view with all procmods
+	scroll = ScrollView(win);
+	view = View();
+	scroll.canvas = view;
+	view.layout_(VLayout().spacing_(2));
+	// StaticText(win).string_();
+	evArr = events.eventArray;
+	evArr.flat.do({|key, inc|
+		var thisProc = events.eventDict[key];
+		var runButt, sl, thisView;
+		var controller = SimpleController(thisProc); //SimpleController for each individual procmod
+		thisView = View(view).layout_(HLayout(
+			runButt = Button(view)
+			.states_([[key ++ " [ ]", Color.black], [key ++ " >", Color.black, Color.green(0.75, 0.25)]])
+			.action_({|butt| if(butt.value.asBoolean, {thisProc.play}, {thisProc.release})})
+			.fixedWidth_(220)
+			.value_(thisProc.isRunning.asInteger),
+		).margins_([0,0,0,0]));
+		sl = EZSlider(view, controlSpec: ControlSpec(-90, 6, \db, default: thisProc.amp.ampdb), action: {|sl| thisProc.amp_(sl.value.dbamp)});
+		thisView.layout.add(sl.sliderView);
+		thisView.layout.add(sl.numberView.fixedWidth_(50));
+
+		//update values automatically
+		controller.put(\isRunning, {|theChanger, what, values| //values will be true or false
+			// what.post; ": ".post; values.postln;
+			runButt.value_(values.asInteger);
+		});
+		controller.put(\amp, {|theChanger, what, values| //values will be current amp
+			// what.post; ": ".post; values.postln;
+			sl.value(values.ampdb);
+		});
+		thisView.onClose_{controller.remove}; //important to remove on close
+	});
+	view.layout.add(nil); //space at the end
+};
+)
+
+//create a custom gui, as well as regular procEvents' perfGUI
+(
+f.value(e);
+e.perfGUI;
+)
 ::
