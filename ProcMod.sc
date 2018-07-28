@@ -1237,7 +1237,8 @@ ProcEvents {
 		^this;
 		}
 
-	perfGUI {arg guiBounds, buttonColor = Color(0.3, 0.7, 0.3, 0.7);
+	perfGUI {arg guiBounds, buttonColor = Color(0.3, 0.7, 0.3, 0.7), parent;
+		var view;
 //		var buttonheight, buttonWidth;
 
 		guiBounds = guiBounds ?? {Rect(10, bounds.height * 0.5, bounds.width * 0.3,
@@ -1245,7 +1246,13 @@ ProcEvents {
 
 		gui = true;
 
-		window = GUI.window.new(id.asString, guiBounds);
+		parent.isNil.if({
+			window = Window.new(id.asString, guiBounds);
+			view = window.view;
+		}, {
+			window = View.new(parent, guiBounds);
+			view = window;
+		});
 
 		buttonHeight = guiBounds.height * 0.15;
 		buttonWidth = guiBounds.width * 0.5;
@@ -1255,7 +1262,7 @@ ProcEvents {
 			.value_(index)
 			.font_(GUI.font.new("Arial", 24))
 			.action_({arg me;
-				window.view.children[window.view.children.indexOf(me) + 1].focus(true);
+				view.children[view.children.indexOf(me) + 1].focus(true);
 				});
 
 		eventButton = GUI.button.new(window, Rect(10, 10, buttonWidth * 0.9,
@@ -1266,15 +1273,15 @@ ProcEvents {
 			.font_(GUI.font.new("Arial", 24))
 			.action_({arg me;
 				var numbox, numboxval;
-				numbox = window.view.children.indexOf(me)-1;
-				numboxval = window.view.children[numbox].value;
+				numbox = view.children.indexOf(me)-1;
+				numboxval = view.children[numbox].value;
 				bigNum.if({
 					bigNumWindow.view.children[0].string_(numboxval)
 					});
 				(numboxval < eventArray.size).if({
 					this.play(numboxval);
-					window.view.children[numbox].value_(numboxval + 1);
-					window.view.children[window.view.children.indexOf(me)+1]
+					view.children[numbox].value_(numboxval + 1);
+					view.children[view.children.indexOf(me)+1]
 						.string_("Current Event: "++numboxval.asInteger);
 					}, {
 					"No event at that index".warn
@@ -1293,7 +1300,7 @@ ProcEvents {
 				])
 			.font_(GUI.font.new("Arial", 24))
 			.action_({arg me;
-				window.view.children[window.view.children.indexOf(me) - 2].focus(true);
+				view.children[view.children.indexOf(me) - 2].focus(true);
 				this.reset;
 				});
 
@@ -1304,7 +1311,7 @@ ProcEvents {
 				])
 			.font_(GUI.font.new("Arial", 24))
 			.action_({arg me;
-				window.view.children[window.view.children.indexOf(me) - 3].focus(true);
+				view.children[view.children.indexOf(me) - 3].focus(true);
 				this.releaseAll;
 				});
 
@@ -1315,7 +1322,7 @@ ProcEvents {
 				])
 			.font_(GUI.font.new("Arial", 24))
 			.action_({arg me;
-				window.view.children[window.view.children.indexOf(me) - 4].focus(true);
+				view.children[view.children.indexOf(me) - 4].focus(true);
 				//this.killAll;
 				window.close;
 				});
@@ -1339,7 +1346,7 @@ ProcEvents {
 				this.amp_(val);
 				});
 
-		window.view.children[1].focus(true);
+		view.children[1].focus(true);
 
 		window.onClose_({this.killAll; gui = false; bigNum.if({bigNumWindow.close})});
 
