@@ -3,9 +3,9 @@ HDR {
 	var <>addAction, <>target, <sessionPath, <filename, <>headerFormat, <>sampleFormat,
 		<reclevel, <channels, <bufnum, <isRecording = false, <server, <synthdef, <synthdefname,
 		<>bufsize = 65536, cond, <node, <guiMode = false, <monitorMode = false, <monitorOut = 0,
-		<monitorNode, <scopeBufnum, <scopeNode, <numChannels, <bfMonitorMode = false,
+		<monitorNode, <scopeBuffer, <scopeNode, <numChannels, <bfMonitorMode = false,
 		<>bfMonitorOut = 0, <>bfw, <>bfx, <>bfy, <>bfz, <bfMonitorChans, <bfMonitor, cper,
-		timestamp;
+		timestamp, <scopeView;
 
 	*new { arg server, channels, addAction = 1, target = 0, sessionPath, filename,
 			headerFormat = "aiff", sampleFormat = "int16", reclevel = 1, timestamp = true;
@@ -14,15 +14,13 @@ HDR {
 		}
 
 	init {arg argChannels, argServer, argTimeStamp;
+		var createSynthDefs;
 		server = argServer ? Server.default;
-		server.serverRunning.not({
-			server.boot;
-			});
 		timestamp = argTimeStamp;
 		cond = Condition.new;
 		channels = argChannels.isKindOf(Array).not.if({argChannels.asArray}, {argChannels});
 		numChannels = channels.size;
-		server.waitForBoot({
+		createSynthDefs = {
 			synthdefname = this.hash.asString;
 			SynthDef(synthdefname, {arg hdrgate = 1, buffer, reclevel = 1;
 				var in;
@@ -31,9 +29,9 @@ HDR {
 				in = in * EnvGen.kr(
 					Env([1, 1, 0], [0.1, 0.1], -10, 1),
 					hdrgate, doneAction: 2) *
-					Lag2.kr(reclevel, 0.1);
+				Lag2.kr(reclevel, 0.1);
 				DiskOut.ar(buffer, in);
-				}).send(server);
+			}).add;
 			SynthDef(synthdefname++"monitor", {arg mongate = 1, outbus, reclevel = 1;
 				var in;
 				in = [];
@@ -41,9 +39,9 @@ HDR {
 				in = in * EnvGen.kr(
 					Env([1, 1, 0], [0.1, 0.1], -10, 1),
 					mongate, doneAction: 2) *
-					Lag2.kr(reclevel, 0.1);
+				Lag2.kr(reclevel, 0.1);
 				Out.ar(outbus, in);
-				}).send(server);
+			}).add;
 			SynthDef(synthdefname++"scope", {arg scopegate = 1, buffer, reclevel = 1;
 				var in;
 				in = [];
@@ -51,12 +49,18 @@ HDR {
 				in = in * EnvGen.kr(
 					Env([1, 1, 0], [0.1, 0.1], -10, 1),
 					scopegate, doneAction: 2) *
-					Lag2.kr(reclevel, 0.1);
-				ScopeOut.ar(in, buffer);
-				}).send(server);
+				Lag2.kr(reclevel, 0.1);
+				ScopeOut2.ar(in, buffer);
+			}).add;
+		};
+		if(server.serverRunning, {
+			createSynthDefs.value;
+		}, {
+			server.waitForBoot({
+				createSynthDefs.value
 			});
-
-		}
+		});
+	}
 
 	bfMonitorChans_ {arg ... wxyz;
 		wxyz = wxyz.flat;
@@ -166,7 +170,7 @@ HDR {
 		server.doWhenBooted({
 			guiMode = true;
 			bounds = GUI.window.screenBounds;
-			scopeBufnum = server.bufferAllocator.alloc(1);
+			scopeBuffer = ScopeBuffer.alloc(server);
 			dbspec = [-inf, 6, \db].asSpec;
 			window = GUI.window.new(filename, Rect(bounds.width * 0.1, bounds.height * 0.1,
 				bounds.width * 0.6, bounds.height * 0.6));
@@ -234,13 +238,15 @@ HDR {
 					this.reclevel_(me.dbamp);
 					});
 
-			GUI.scopeView.new(window,
+			scopeView = ScopeView.new(window,
 				Rect(window.bounds.width * 0.05, window.bounds.height * 0.25,
 					window.bounds.width * 0.9, window.bounds.height * 0.7))
-				.bufnum_(scopeBufnum)
+				.bufnum_(scopeBuffer.bufnum)
 				.waveColors_(
 					Array.fill(numChannels, {Color.green})
-					);
+					)
+			.server_(server)
+			.canFocus_(true);
 
 			window.onClose_({
 				isRecording.if({
@@ -253,17 +259,16 @@ HDR {
 					this.stopBfMonitor;
 					});
 				server.sendMsg(\n_free, scopeNode);
-				server.sendMsg(\b_free, scopeBufnum);
-				server.bufferAllocator.free(scopeBufnum);
+				{scopeView.stop}.defer;
+				scopeBuffer.free;
 				});
 
 			guirout = Routine({
-				// allocate a buffer for the scope
-				server.sendMsgSync(cond, \b_alloc, scopeBufnum, 4096, numChannels);
 				{ window.front }.defer;
 				server.sendMsg(\s_new, synthdefname++"scope", scopeNode = server.nextNodeID,
-					addAction, target,	\buffer, scopeBufnum, \reclevel, reclevel);
+					addAction, target,	\buffer, scopeBuffer.bufnum, \reclevel, reclevel);
 				});
+			scopeView.start;
 
 			guirout.play(AppClock);
 			})
