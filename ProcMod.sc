@@ -787,6 +787,7 @@ ProcEvents {
 	/* begion add */
 	var <recordPM = false, recordpath, <>timeStamp, <>headerFormat, <>sampleFormat;
 	var <>onEvent;
+	var <>killOnClose = true;
 
 	classvar addActions, writeDefs, bounds;
 
@@ -1348,7 +1349,7 @@ ProcEvents {
 
 		view.children[1].focus(true);
 
-		window.onClose_({this.killAll; gui = false; bigNum.if({bigNumWindow.close})});
+		window.onClose_({killOnClose.if({this.killAll}); gui = false; bigNum.if({bigNumWindow.close})});
 
 		window.front;
 
