@@ -787,6 +787,7 @@ ProcEvents {
 	/* begion add */
 	var <recordPM = false, recordpath, <>timeStamp, <>headerFormat, <>sampleFormat;
 	var <>onEvent;
+	var <>killOnClose = true;
 
 	classvar addActions, writeDefs, bounds;
 
@@ -886,7 +887,7 @@ ProcEvents {
 
 	index_ {arg nextIdx;
 		index = nextIdx;
-		gui.if({AppClock.sched(0.01, {window.view.children[0].value_(nextIdx)})});
+		gui.if({AppClock.sched(0.01, {window.asView.children[0].value_(nextIdx)})});
 		}
 
 	next {
@@ -972,8 +973,8 @@ ProcEvents {
 	releaseAll {arg rel = true;
 		rel.if({eventDict.do{arg me; me.isRunning.if({me.release})}});
 		gui.if({
-			window.view.children[2].string_("No events currently running");
-			window.view.children[1].focus(true);
+			window.asView.children[2].string_("No events currently running");
+			window.asView.children[1].focus(true);
 			});
 		tlplay.if({this.stopTimeLine});
 		tlrec.if({this.stopRecordTimeLine});
@@ -991,7 +992,7 @@ ProcEvents {
 		lag = 0.1;
 		this.amp_(1);
 		gui.if({
-			window.view.children[0].value_(0);
+			window.asView.children[0].value_(0);
 			});
 		starttime = nil;
 		eventDict.do({arg me; me.group = server.nextNodeID});
@@ -1016,8 +1017,8 @@ ProcEvents {
 			db = amp.ampdb.round(0.1);
 			// convert to the sliders scale
 			slide = ControlSpec(-90, 6, \db).unmap(db);
-			window.view.children[7].value_(db);
-			window.view.children[6].value_(slide);
+			window.asView.children[7].value_(db);
+			window.asView.children[6].value_(slide);
 			});
 		}
 
@@ -1348,7 +1349,7 @@ ProcEvents {
 
 		view.children[1].focus(true);
 
-		window.onClose_({this.killAll; gui = false; bigNum.if({bigNumWindow.close})});
+		window.onClose_({killOnClose.if({this.killAll}); gui = false; bigNum.if({bigNumWindow.close})});
 
 		window.front;
 
