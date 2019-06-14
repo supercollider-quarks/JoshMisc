@@ -3,7 +3,7 @@ ProcMod {
 	var <amp, <>group, <addAction, <target, <timeScale, <lag, <>id, <>function,
 		<>releaseFunc, <>onReleaseFunc, <responder, <envnode, <isRunning = false, <data,
 		<starttime, <window, gui = false, <button, <process, retrig = false, <isReleasing = false,
-		oldgroups, <>clock, <env, <>server, <envbus, <releasetime, uniqueClock = false,
+		oldgroups, oldenvbuses, <>clock, <env, <>server, <envbus, <releasetime, uniqueClock = false,
 		<tempo = 1, oldclocks, <composite, midiAmp, ccCtrl, midiChan, midiCtrl,
 		midiAmpSpec, midiPort, <>pevents, <about, closeable, <>info, peakView;
 	var recordPM, <>recordpath;
@@ -44,6 +44,7 @@ ProcMod {
 		clock = argClock;
 		oldgroups = [];
 		oldclocks = [];
+		oldenvbuses = [];
 		midiAmp = false;
 		this.changed(\amp, amp);
 		}
@@ -184,12 +185,13 @@ ProcMod {
 
 	release {arg reltime;
 		var curproc, curresp, curgroup, currelfunc, newrelval, curclock, curhdr, curroute,
-			curccctrl;
+			curccctrl, curenvbus;
 		curproc = process;
 		curresp = responder;
 		responder = nil;
 		curgroup = group;
 		currelfunc = releaseFunc;
+		curenvbus = envbus;
 		curccctrl = ccCtrl.postln;
 		uniqueClock.if({curclock = clock; clock = nil});
 		isRunning.if({
@@ -213,17 +215,18 @@ ProcMod {
 					});
 				curclock.sched(newrelval, {
 					this.clear(curproc, curresp, curgroup, currelfunc, curclock,
-						oldccctrl: curccctrl)
+						oldccctrl: curccctrl, oldenvbus: curenvbus)
 					})
 				}, {
 				this.clear(curproc, curresp, curgroup, currelfunc, curclock,
-					oldccctrl: curccctrl)
+					oldccctrl: curccctrl, oldenvbus: curenvbus)
 				});
 			});
 		// if retriggerable... clear out group now
 		retrig.if({
 			oldgroups = oldgroups.add(group);
 			oldclocks = oldclocks.add(curclock);
+			oldenvbuses = oldenvbuses.add(curenvbus);
 			group = nil;
 			isRunning = false;
 			this.changed(\isRunning, isRunning);
@@ -239,7 +242,10 @@ ProcMod {
 		currelfunc = releaseFunc;
 		curccctrl = ccCtrl;
 		isRunning.if({server.sendMsg(\n_free, curgroup)});
-		isReleasing.if({oldgroups.do({arg me; server.sendMsg(\n_free, me)})});
+		isReleasing.if({
+			oldgroups.do({arg me; server.sendMsg(\n_free, me)});
+			oldenvbuses.do({arg me; server.controlBusAllocator.free(me)});
+		});
 		// if a tempo clock was created for this procMod, clear it
 		uniqueClock.if({clock.clear; oldclock = clock; clock = nil});
 		oldclocks.do({arg me; me.clear; me.stop});
@@ -257,10 +263,12 @@ ProcMod {
 
 // need to check for TempoClock - old clocks need to be saved until
 // they can be garbage collected
-	clear {arg oldproc, oldresp, oldgroup, oldrelfunc, oldclock, oldhdr, oldroute, oldccctrl;
+	clear {arg oldproc, oldresp, oldgroup, oldrelfunc, oldclock, oldhdr, oldroute, oldccctrl, oldenvbus;
 		oldproc.notNil.if({this.stopprocess(oldproc)});
 		server.sendMsg(\n_free, oldgroup);
+		oldenvbus.notNil.if({server.controlBusAllocator.free(oldenvbus)});
 		oldgroups.remove(oldgroup);
+		oldenvbuses.remove(oldenvbus);
 		oldrelfunc.notNil.if({
 			oldrelfunc.isKindOf(Function).if({
 				oldrelfunc.value;
