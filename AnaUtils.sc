@@ -432,7 +432,8 @@ PVAna {
 			});
 		}
 
-	ana {arg filPath, fftSize = 2048, winType = 1, hop = 0.25, starttime = 0, duration = nil;
+	ana {arg filPath, fftSize = 2048, winType = 1, hop = 0.25, starttime = 0,
+		duration = nil, channel = 0;
 		var score, sd, pathTest;
 		score = Score.new;
 		sd = SynthDef("pvrec", { arg recBuf=1, soundBufnum=2, dur, start;
@@ -452,7 +453,7 @@ PVAna {
 		pathTest.if({
 			score.add(
 				[0.0, [\b_alloc, 1, duration.calcPVRecSize(fftSize, hop, sf.sampleRate)],
-					[\b_allocRead, 2, sfpath],
+					[\b_allocReadChannel, 2, sfpath, 0, 0, channel],
 					[\s_new, \pvrec, 1000, 0, 1, \recBuf, 1, \soundBufnum, 2, \dur, duration,
 						\start, starttime]]);
 			score.add(
