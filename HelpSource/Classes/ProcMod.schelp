@@ -190,6 +190,9 @@ ARGUMENT:: oldroute
 
 ARGUMENT:: oldccctrl
 
+ARGUMENT:: oldenvbus
+
+
 METHOD:: id
 
 METHOD:: envnode

@@ -225,6 +225,8 @@ ARGUMENT:: guiBounds
 
 ARGUMENT:: buttonColor
 
+ARGUMENT:: parent
+
 
 METHOD:: loadTimeLine
 
