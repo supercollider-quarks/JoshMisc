@@ -534,7 +534,7 @@ ProcModR : ProcMod {
 		var thisfun, port;
 		clock = clock ?? {uniqueClock = true; TempoClock.new(tempo)};
 		isRunning.not.if({
-			ampOscDef = OSCdef(id, {arg ... args; (peakView.notNil and:{args[0][1] == envnode}).if({
+			ampOscDef = OSCdef(id ? this.hash, {arg ... args; (peakView.notNil and:{args[0][1] == envnode}).if({
 				{
 					var msg, peaks, amps;
 					msg = args[0];
