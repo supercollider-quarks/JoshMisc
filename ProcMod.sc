@@ -14,23 +14,19 @@ ProcMod {
 			releaseFunc, onReleaseFunc, responder).initProcMod(clock, server, env);	}
 
 	initProcMod {arg argClock, argServer, argEnv, argNumChannels, argProcout;
-		var tmp, srvrs;
 		group = group.asControlInput;
 		target = target.asControlInput;
 		writeDefs.if({
-			srvrs = Server.all;
 			writeDefs = false;
-			tmp = SynthDef(\procmodenv_5216, {arg pgate = 1, outbus, amp = 1, timeScale = 1,
+			SynthDef(\procmodenv_5216, {arg pgate = 1, outbus, amp = 1, timeScale = 1,
 					lag = 0.01;
 				var env;
 				env = EnvGen.kr(
 					Control.names(\env).kr(Env.newClear(30)), pgate,
 						1, 0, timeScale, doneAction: 13) * Lag2.kr(amp, lag);
 				Out.kr(outbus, env);
-				});
-			tmp.writeDefFile;
-			srvrs.do({arg me; tmp.send(me)});
-			});
+			}).add;
+		});
 		server = argServer ?? {Server.default};
 		env = argEnv;
 		(env.notNil).if({
@@ -453,15 +449,13 @@ ProcModR : ProcMod {
 		}
 
 	initProcModR {arg argClock, argServer, argEnv, argNumChannels, argProcout;
-		var tmp, srvrs;
 		group = group.asControlInput;
 		target = target.asControlInput;
 		server = argServer ?? {Server.default};
 		writeDefs.if({
-			srvrs = Server.all;
 			writeDefs = false;
 			for(1, 16, {arg i;
-					tmp = SynthDef((\procmodroute_8723_ ++ i).asSymbol, {arg inbus, outbus,
+					SynthDef((\procmodroute_8723_ ++ i).asSymbol, {arg inbus, outbus,
 							amp = 1, lag = 0.01;
 					var ampVal, peakVal, out;
 					out =  In.ar(inbus, i) * Lag2.kr(amp, lag);
@@ -469,28 +463,24 @@ ProcModR : ProcMod {
 					ampVal = Amplitude.ar(out, 0.05, 0.05);//.asArray.mean;
 					SendReply.kr(Impulse.kr(20), '/pmodAmpTrack', [peakVal, ampVal].flat);
 						Out.ar(outbus,out);
-					});
-					tmp.writeDefFile;
-					srvrs.do({arg me; tmp.send(me)});
-				});
+				}).add;
+			});
 			for(1, 16, {arg i;
-					tmp = SynthDef((\procmodroute_8723_env_ ++ i).asSymbol, {arg inbus, outbus,
-							pgate = 1, amp = 1, timeScale = 1, lag = 0.01;
-						var sig, ampVal, peakVal;
-						sig = In.ar(inbus, i) *
-							EnvGen.kr(
-								Control.names(\env).kr(Env.newClear(30)), pgate,
-									1, 0, timeScale, doneAction: 13) * Lag2.kr(amp, lag);
+				SynthDef((\procmodroute_8723_env_ ++ i).asSymbol, {arg inbus, outbus,
+					pgate = 1, amp = 1, timeScale = 1, lag = 0.01;
+					var sig, ampVal, peakVal;
+					sig = In.ar(inbus, i) *
+					EnvGen.kr(
+						Control.names(\env).kr(Env.newClear(30)), pgate,
+						1, 0, timeScale, doneAction: 13) * Lag2.kr(amp, lag);
 					peakVal = PeakFollower.ar(sig);//.asArray.mean;
 					ampVal = Amplitude.ar(sig, 0.01, 0.05);//.asArray.mean;
 					SendReply.kr(Impulse.kr(20), '/pmodAmpTrack', [peakVal, ampVal].flat);
-						ReplaceOut.ar(inbus, sig);
-						Out.ar(outbus, sig);
-					});
-					tmp.writeDefFile;
-					srvrs.do({arg me; tmp.send(me)});
-				});
+					ReplaceOut.ar(inbus, sig);
+					Out.ar(outbus, sig);
+				}).add;
 			});
+		});
 		env = argEnv;
 		(env.notNil).if({
 			env.isKindOf(Env).if({
@@ -812,24 +802,19 @@ ProcEvents {
 
 	initProcEvents {arg events, argamp, arginitmod, argkillmod, argid, argserver, arglag;
 		var proc, release, newproc, evid;
-		var tmp, srvrs;
 		{bounds = Window.screenBounds}.defer;
 		writeDefs.if({
-			srvrs = Server.all;
 			writeDefs = false;
-			tmp = SynthDef(\procevoutenv6253, {arg amp = 1, lag = 0.2;
-				ReplaceOut.ar(0, In.ar(0, 8) * Lag2.kr(amp, lag))				});
-			tmp.writeDefFile;
-			srvrs.do({arg me; tmp.send(me)});
-			tmp = SynthDef(\procevtesttrig76234, {arg pedalin, id, dur = 2;
+			SynthDef(\procevoutenv6253, {arg amp = 1, lag = 0.2;
+				ReplaceOut.ar(0, In.ar(0, 8) * Lag2.kr(amp, lag))
+			}).add;
+			SynthDef(\procevtesttrig76234, {arg pedalin, id, dur = 2;
 					var ped;
 //					ped = RunningSum.rms(In.ar(pedalin), 0.1 * SampleRate.ir);
 					ped = Amplitude.ar(In.ar(pedalin));
 					SendTrig.ar(Impulse.ar(10), id, ped);
-				});
-			tmp.writeDefFile;
-			srvrs.do({arg me; tmp.send(me)});
-			tmp = SynthDef(\procevtrig2343, {arg pedalin = 2, id, trigwindow = 1,
+			}).add;
+			SynthDef(\procevtrig2343, {arg pedalin = 2, id, trigwindow = 1,
 					mute = 1, scale = 1;
 				var in, delay, trig, pitch, hasPitch;
 				in = Amplitude.ar(In.ar(pedalin)) * mute;
@@ -841,10 +826,8 @@ ProcEvents {
 //					Pitch.kr(in, 100, 45, 75, peakThreshold: 0.5, ampThreshold: -60.dbamp);
 //				[pitch, hasPitch].poll;
 				SendTrig.kr(Trig1.kr(trig > 24.dbamp, trigwindow), id, 1);
-				}).add;
-			tmp.writeDefFile;
-			srvrs.do({arg me; tmp.send(me)});
-			});
+			}).add;
+		});
 		eventDict = Dictionary.new(events.flat.size);
 		eventArray = Array.fill(events.size, {Array.new});
 		releaseArray = Array.fill(events.size, {Array.new});
