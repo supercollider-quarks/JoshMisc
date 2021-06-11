@@ -61,6 +61,7 @@ ProcMod {
 			isRunning = true;
 			this.changed(\isRunning, isRunning);
 			// add the responder if it isn't nil
+			{gui.if({button.value_(1)})}.defer;
 			responder.notNil.if({responder.add});
 			midiAmp.if({
 				[midiChan, midiCtrl].postln;
@@ -194,6 +195,7 @@ ProcMod {
 		curenvbus = envbus;
 		curccctrl = ccCtrl.postln;
 		uniqueClock.if({curclock = clock; clock = nil});
+		{gui.if({button.value_(0)})}.defer;
 		isRunning.if({
 			onReleaseFunc.value;
 //			server.sendMsg(\n_set, curgroup, \gate, 0);
