@@ -57,6 +57,7 @@ ProcMod {
 			isRunning = true;
 			this.changed(\isRunning, isRunning);
 			// add the responder if it isn't nil
+			{gui.if({button.value_(1)})}.defer;
 			responder.notNil.if({responder.add});
 			midiAmp.if({
 				[midiChan, midiCtrl].postln;
@@ -190,6 +191,7 @@ ProcMod {
 		curenvbus = envbus;
 		curccctrl = ccCtrl.postln;
 		uniqueClock.if({curclock = clock; clock = nil});
+		{gui.if({button.value_(0)})}.defer;
 		isRunning.if({
 			onReleaseFunc.value;
 //			server.sendMsg(\n_set, curgroup, \gate, 0);
@@ -344,16 +346,16 @@ ProcMod {
 		sliderWidth = showMeters.if({0.45}, {0.5});
 		slider = GUI.slider.new(composite, Rect(winw * 0.3, 0, winw * sliderWidth - xspace,
 				winh * 0.8 - yspace))
-			.value_(dbspec.unmap(amp.ampdb).quantize(0.01))
+			.value_(dbspec.unmap(amp.ampdb).snap(0.01))
 			.action_({arg me;
 				var ampval;
 				ampval = dbspec.map(me.value);
 				this.amp_(ampval.dbamp);
-				numbox.value_(ampval.quantize(0.01));
+				numbox.value_(ampval.snap(0.01));
 				});
 		numbox = GUI.numberBox.new(composite, Rect(winw * 0.8, 0, winw * 0.2 - xspace,
 				winh * 0.8- yspace))
-			.value_(amp.ampdb.quantize(0.01))
+			.value_(amp.ampdb.snap(0.01))
 			.action_({arg me;
 				this.amp_(me.value.dbamp);
 				slider.value_(dbspec.unmap(me.value));
