@@ -472,19 +472,6 @@ PVAna {
 }
 
 
-+ Complex {
-	sqrt {
-		var mag, ang;
-		mag = this.rho.sqrt;
-		ang = (real != 0.0).if({
-			imag.atan2(real) * 0.5;
-			}, {
-			0.0
-			});
-		^Complex(mag * ang.cos, mag * ang.sin);
-		}
-	}
-
 + ArrayedCollection {
 	// a VERY simple low pass function to smooth a signal in an Array
 	lowpass {
