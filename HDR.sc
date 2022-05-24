@@ -5,21 +5,22 @@ HDR {
 		<>bufsize = 65536, cond, <node, <guiMode = false, <monitorMode = false, <monitorOut = 0,
 		<monitorNode, <scopeBuffer, <scopeNode, <numChannels, <bfMonitorMode = false,
 		<>bfMonitorOut = 0, <>bfw, <>bfx, <>bfy, <>bfz, <bfMonitorChans, <bfMonitor, cper,
-		timestamp, <scopeView;
+		timestamp, <scopeView, <>extension;
 
 	*new { arg server, channels, addAction = 1, target = 0, sessionPath, filename,
-			headerFormat = "aiff", sampleFormat = "int16", reclevel = 1, timestamp = true;
+			headerFormat = "aiff", sampleFormat = "int16", reclevel = 1, timestamp = true, extension;
 		^super.newCopyArgs(addAction, target, sessionPath, filename, headerFormat,
-			sampleFormat, reclevel).init(channels, server, timestamp);
+			sampleFormat, reclevel).init(channels, server, timestamp, extension);
 		}
 
-	init {arg argChannels, argServer, argTimeStamp;
+	init {arg argChannels, argServer, argTimeStamp, argExtension;
 		var createSynthDefs;
 		server = argServer ? Server.default;
 		timestamp = argTimeStamp;
 		cond = Condition.new;
 		channels = argChannels.isKindOf(Array).not.if({argChannels.asArray}, {argChannels});
 		numChannels = channels.size;
+		extension = argExtension;
 		createSynthDefs = {
 			synthdefname = this.hash.asString;
 			SynthDef(synthdefname, {arg hdrgate = 1, buffer, reclevel = 1;
@@ -94,7 +95,7 @@ HDR {
 		server.sendMsgSync(cond, \b_write, bufnum, sessionPath ++
 			filename ++
 				timestamp.if({Date.getDate.stamp}, {""}) ++
-				"." ++ headerFormat, headerFormat, sampleFormat,
+			"." ++ (extension ? headerFormat), headerFormat, sampleFormat,
 				0, 0, 1);
 		}
 
