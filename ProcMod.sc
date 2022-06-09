@@ -65,7 +65,7 @@ ProcMod {
 					this.amp_(midiAmpSpec.map(value*0.0078740157480315).dbamp, false);
 					}, nil, midiChan, midiCtrl, nil);
 				port = MIDIOut.new(midiPort);
-				port.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp) * 127).round);
+				port.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp.ampdb) * 127).round);
 				});
 			// create this Proc's group, and if there is an env, start it
 			// also, if there is no release node, schedule the Procs release
@@ -128,7 +128,7 @@ ProcMod {
 		(midiAmp and: {sendMidi}).if({
 			port = MIDIOut.new(midiPort);
 			port.control(midiChan, midiCtrl,
-				(midiAmpSpec.unmap(amp) * 127).round.max(0).min(127));
+				(midiAmpSpec.unmap(amp.ampdb) * 127).round.clip(0, 127));
 			});
 		this.changed(\amp, amp);
 	}
@@ -549,7 +549,7 @@ ProcModR : ProcMod {
 					this.amp_(midiAmpSpec.map(value*0.0078740157480315).dbamp, false);
 					}, nil, midiChan, midiCtrl, nil);
 				port = MIDIOut.new(midiPort);
-				port.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp) * 127).round);
+				port.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp.ampdb) * 127).round);
 				});
 			group = group ?? {server.nextNodeID};
 			notegroup = server.nextNodeID;
