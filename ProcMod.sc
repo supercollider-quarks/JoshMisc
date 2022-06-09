@@ -61,12 +61,10 @@ ProcMod {
 			responder.notNil.if({responder.add});
 			midiAmp.if({
 				[midiChan, midiCtrl].postln;
-				ccCtrl = CCResponder({arg src, chan, num, value;
-					this.amp_(midiAmpSpec.map(value*0.0078740157480315).dbamp, false);
-					}, nil, midiChan, midiCtrl, nil);
 				port = MIDIOut.new(midiPort);
 				port.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp.ampdb) * 127).round);
-				});
+				this.prMakeCCResponder;
+			});
 			// create this Proc's group, and if there is an env, start it
 			// also, if there is no release node, schedule the Procs release
 			group = group ?? {server.nextNodeID};
@@ -298,12 +296,18 @@ ProcMod {
 		midiPort = clientPort;
 		midiChan = midiChannel;
 		ccCtrl.notNil.if({
-			ccCtrl.remove;
-			ccCtrl = CCResponder({arg src, chan, num, value;
-				this.amp_(midiAmpSpec.map(value*0.0078740157480315).dbamp, false);
-				}, nil, midiChan, midiCtrl, nil)
-			})
-		}
+			this.prMakeCCResponder;
+		})
+	}
+
+	prMakeCCResponder {
+		var maxMidiValReci = 127.reciprocal;
+		ccCtrl.remove;
+		ccCtrl = CCResponder({arg src, chan, num, value;
+			this.amp_(midiAmpSpec.map(value * maxMidiValReci).dbamp, false);
+		}, nil, midiChan, midiCtrl, nil)
+	}
+
 
 	// ProcMod.gui should create a small GUI that will control the ProcMod - start / stop, amp
 	// if trig is notNil, it should be a $char or a midi keynum. This will toggle the ProcMod
@@ -545,9 +549,7 @@ ProcModR : ProcMod {
 			responder.notNil.if({responder.add});
 			midiAmp.if({
 				[midiChan, midiCtrl].postln;
-				ccCtrl = CCResponder({arg src, chan, num, value;
-					this.amp_(midiAmpSpec.map(value*0.0078740157480315).dbamp, false);
-					}, nil, midiChan, midiCtrl, nil);
+				this.prMakeCCResponder;
 				port = MIDIOut.new(midiPort);
 				port.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp.ampdb) * 127).round);
 				});
