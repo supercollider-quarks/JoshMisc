@@ -83,7 +83,7 @@ METHOD:: eventArray
 METHOD:: preKill
 
 METHOD:: next
-Will play and release the next event is the events array. Starts at 0. If initmod has not been executed, it will be.
+Will play and release the next event in the events array. Starts at 0. If initmod has not been executed, it will be.
 
 METHOD:: scope
 
@@ -104,7 +104,13 @@ METHOD:: stopRecord
 
 METHOD:: index
 
+The emphasis::next:: event's index. This is used internally and only when there's no GUI.
+
 ARGUMENT:: nextIdx
+
+METHOD:: indexPlaying
+
+Returns an code::Integer:: of the currently playing index. Will be code::nil:: initially and after resetting.
 
 
 METHOD:: bigNum

@@ -790,7 +790,7 @@ ProcModR : ProcMod {
 //model-view-controller messages: \indexPlaying with the current index, \amp with global amp
 
 ProcEvents {
-	var <eventDict, <ampDict, <eventArray, <releaseArray, <timeArray, <index,
+	var <eventDict, <ampDict, <eventArray, <releaseArray, <timeArray, <index, <indexPlaying,
 		<id, gui = false, <window, <server, firstevent = false, initmod, killmod, <amp, <lag,
 		<procampsynth, procevscope = false, <pracwindow, <pracmode = false, pracdict,
 		<eventButton, <killButton, <releaseButton, starttime = nil, <pedal = false,
@@ -859,6 +859,7 @@ ProcEvents {
 		amp = argamp;
 		index = 0;
 		this.changed(\indexPlaying, nil);
+		indexPlaying = nil;
 		lag = arglag;
 		firstevent = true;
 		isPlaying = false;
@@ -926,6 +927,7 @@ ProcEvents {
 	play {arg event;
 		var path;
 		this.changed(\indexPlaying, event);
+		indexPlaying = event.asInteger;
 		firstevent.if({
 			isPlaying = true;
 			starttime.isNil.if({starttime = Main.elapsedTime});
@@ -990,7 +992,8 @@ ProcEvents {
 			});
 		tlplay.if({this.stopTimeLine});
 		tlrec.if({this.stopRecordTimeLine});
-		this.changed(\indexPlaying, nil)
+		this.changed(\indexPlaying, nil);
+		indexPlaying = nil;
 	}
 
 	reset {
@@ -1001,6 +1004,7 @@ ProcEvents {
 		firstevent = true;
 		index = 0;
 		this.changed(\indexPlaying, nil);
+		indexPlaying = nil;
 		lag = 0.1;
 		this.amp_(1);
 		gui.if({
