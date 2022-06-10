@@ -296,11 +296,16 @@ ProcMod {
 			}, {
 				if(clientPort.isKindOf(MIDIEndPoint), {
 					midiPort = MIDIOut.newByName(clientPort.device, clientPort.name)
+				}, {
+					if(clientPort.isKindOf(MIDIOut), {
+						midiPort = clientPort;
+					})
 				})
 			});
-		} {
-			"Failed to use '%' as MIDIOut".format(clientPort).warn;
 		};
+		if(clientPort.notNil && midiPort.isNil, {
+			"Failed to use '%' as MIDIOut".format(clientPort).warn;
+		});
 		midiChan = midiChannel;
 		ccCtrl.notNil.if({
 			this.prMakeCCResponder;
