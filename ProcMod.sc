@@ -290,13 +290,17 @@ ProcMod {
 		midiAmpSpec = [minamp, maxamp, \db].asSpec;
 		midiAmp = true;
 		midiCtrl = control;
-		if(clientPort.isKindOf(Integer), {
-			midiPort = MIDIOut(clientPort)
-		}, {
-			if(clientPort.isKindOf(MIDIEndPoint), {
-				midiPort = MIDIOut.newByName(clientPort.device, clientPort.name)
-			})
-		});
+		try {
+			if(clientPort.isKindOf(Integer), {
+				midiPort = MIDIOut(clientPort)
+			}, {
+				if(clientPort.isKindOf(MIDIEndPoint), {
+					midiPort = MIDIOut.newByName(clientPort.device, clientPort.name)
+				})
+			});
+		} {
+			"Failed to use '%' as MIDIOut".format(clientPort).warn;
+		};
 		midiChan = midiChannel;
 		ccCtrl.notNil.if({
 			this.prMakeCCResponder;
