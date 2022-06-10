@@ -106,6 +106,10 @@ METHOD:: index
 
 ARGUMENT:: nextIdx
 
+METHOD:: indexPlaying
+
+Returns an code::Integer:: of the currently playing index. Will be code::nil:: initially and after resetting.
+
 
 METHOD:: bigNum
 
