@@ -139,17 +139,26 @@ ARGUMENT:: newtimeScale
 METHOD:: clock
 
 METHOD:: mapAmpToCC
+Map MIDI continuous controller to the amplitude of this ProcMod. The messages are received from all MIDI sources.
 
+Note:: Be sure to run code::MIDIClient.init:: before calling this method.::
 
 ARGUMENT:: control
+CC number
 
 ARGUMENT:: maxamp
+Maximum amplitude in dB (for MIDI value of code::127::)
 
 ARGUMENT:: minamp
+Minimum amplitude in dB (for MIDI value of code::0::)
 
 ARGUMENT:: clientPort
+If not code::nil::, CC will be sent back to this port whenever code::amp_:: is being updated. Useful for MIDI controllers that can update its state when receiving CC messages (e.g. having endless encoders with LED rings or motorized faders).
+The argument can be an instance of code::MIDIOut:: or code::MIDIEndPoint:: to specify a particular port reliably or an code::Integer:: specifying a device index in the code::MIDIClient.destination:: array.
+The messages are sent on the same channel to the same CC number as specified for receiving.
 
 ARGUMENT:: midiChannel
+Channel to receive and send the messages on.
 
 METHOD:: releaseFunc
 An instance of Function, Task or Routine to be evaluated after a ProcMod has released.

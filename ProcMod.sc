@@ -51,7 +51,7 @@ ProcMod {
 			responder, timeScale, lag, clock, server).play;		}
 
 	play {
-		var thisfun, port;
+		var thisfun;
 		clock = clock ?? {uniqueClock = true; TempoClock.new(tempo, queueSize: 1024)};
 		isRunning.not.if({
 			isRunning = true;
@@ -61,12 +61,9 @@ ProcMod {
 			responder.notNil.if({responder.add});
 			midiAmp.if({
 				[midiChan, midiCtrl].postln;
-				ccCtrl = CCResponder({arg src, chan, num, value;
-					this.amp_(midiAmpSpec.map(value*0.0078740157480315).dbamp, false);
-					}, nil, midiChan, midiCtrl, nil);
-				port = MIDIOut.new(midiPort);
-				port.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp) * 127).round);
-				});
+				this.prMakeCCResponder;
+				this.prSendAmpToMidi;
+			});
 			// create this Proc's group, and if there is an env, start it
 			// also, if there is no release node, schedule the Procs release
 			group = group ?? {server.nextNodeID};
@@ -125,11 +122,9 @@ ProcMod {
 		var port;
 		amp = newamp;
 		envnode.notNil.if({server.sendBundle(nil, [\n_set, envnode, \amp, amp])});
-		(midiAmp and: {sendMidi}).if({
-			port = MIDIOut.new(midiPort);
-			port.control(midiChan, midiCtrl,
-				(midiAmpSpec.unmap(amp) * 127).round.max(0).min(127));
-			});
+		if(sendMidi, {
+			this.prSendAmpToMidi
+		});
 		this.changed(\amp, amp);
 	}
 
@@ -291,19 +286,46 @@ ProcMod {
 		MIDIClient.destinations;
 		}
 
-	mapAmpToCC {arg control, maxamp = 6, minamp = -90, clientPort = 0, midiChannel = 0;
+	mapAmpToCC {arg control, maxamp = 6, minamp = -90, clientPort, midiChannel = 0;
 		midiAmpSpec = [minamp, maxamp, \db].asSpec;
 		midiAmp = true;
 		midiCtrl = control;
-		midiPort = clientPort;
+		try {
+			if(clientPort.isKindOf(Integer), {
+				midiPort = MIDIOut(clientPort)
+			}, {
+				if(clientPort.isKindOf(MIDIEndPoint), {
+					midiPort = MIDIOut.newByName(clientPort.device, clientPort.name)
+				}, {
+					if(clientPort.isKindOf(MIDIOut), {
+						midiPort = clientPort;
+					})
+				})
+			});
+		};
+		if(clientPort.notNil && midiPort.isNil, {
+			"Failed to use '%' as MIDIOut".format(clientPort).warn;
+		});
 		midiChan = midiChannel;
 		ccCtrl.notNil.if({
-			ccCtrl.remove;
-			ccCtrl = CCResponder({arg src, chan, num, value;
-				this.amp_(midiAmpSpec.map(value*0.0078740157480315).dbamp, false);
-				}, nil, midiChan, midiCtrl, nil)
-			})
-		}
+			this.prMakeCCResponder;
+		})
+	}
+
+	prMakeCCResponder {
+		var maxMidiValReci = 127.reciprocal;
+		ccCtrl.remove;
+		ccCtrl = CCResponder({arg src, chan, num, value;
+			this.amp_(midiAmpSpec.map(value * maxMidiValReci).dbamp, false);
+		}, nil, midiChan, midiCtrl, nil)
+	}
+
+	prSendAmpToMidi {
+		if(midiAmp && midiPort.notNil, {
+			midiPort.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp.ampdb) * 127).round)
+		});
+	}
+
 
 	// ProcMod.gui should create a small GUI that will control the ProcMod - start / stop, amp
 	// if trig is notNil, it should be a $char or a midi keynum. This will toggle the ProcMod
@@ -523,7 +545,7 @@ ProcModR : ProcMod {
 		}
 
 	play {arg recpath, timestamp = true, argHeaderFormat, argSampleFormat;
-		var thisfun, port;
+		var thisfun;
 		clock = clock ?? {uniqueClock = true; TempoClock.new(tempo)};
 		isRunning.not.if({
 			ampOscDef = OSCdef(id ? this.hash, {arg ... args; (peakView.notNil and:{args[0][1] == envnode}).if({
@@ -545,11 +567,8 @@ ProcModR : ProcMod {
 			responder.notNil.if({responder.add});
 			midiAmp.if({
 				[midiChan, midiCtrl].postln;
-				ccCtrl = CCResponder({arg src, chan, num, value;
-					this.amp_(midiAmpSpec.map(value*0.0078740157480315).dbamp, false);
-					}, nil, midiChan, midiCtrl, nil);
-				port = MIDIOut.new(midiPort);
-				port.control(midiChan, midiCtrl, (midiAmpSpec.unmap(amp) * 127).round);
+				this.prMakeCCResponder;
+				this.prSendAmpToMidi;
 				});
 			group = group ?? {server.nextNodeID};
 			notegroup = server.nextNodeID;
